@@ -1,7 +1,10 @@
 import asyncio
 import datetime
 import os
+from io import BytesIO
 from urllib.parse import urlparse
+
+import qrcode
 
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery, ChatType, InlineKeyboardMarkup, InlineKeyboardButton
@@ -18,7 +21,7 @@ from bot.database.methods import (
 from bot.utils.files import cleanup_item_file
 from bot.handlers.other import get_bot_user_ids, check_sub_channel, get_bot_info
 from bot.keyboards import check_sub, main_menu, categories_list, goods_list, subcategories_list, user_items_list, back, item_info, \
-    profile, rules, payment_menu, close, crypto_choice
+    profile, rules, payment_menu, close, crypto_choice, crypto_invoice_menu
 from bot.localization import t
 from bot.logger_mesh import logger
 from bot.misc import TgConfig, EnvKeys
@@ -495,17 +498,27 @@ async def crypto_payment(call: CallbackQuery):
         await call.answer(text='❌ Invoice not found')
         return
 
-    invoice_id, url = await create_invoice(float(amount), currency)
+    invoice_id, address = await create_invoice(float(amount), currency)
     start_operation(user_id, amount, invoice_id)
     sleep_time = int(TgConfig.PAYMENT_TIME)
-    markup = payment_menu(url, invoice_id)
-    await bot.edit_message_text(chat_id=call.message.chat.id,
-                                message_id=call.message.message_id,
-                                text=(f'💵 Send {amount}€ in {currency}.\n'
+    lang = get_user_language(user_id) or 'en'
 
-                                      f'⌛️ You have {int(sleep_time / 60)} minutes to pay.\n'
-                                      f'<b>❗️ After payment press "Check payment"</b>'),
-                                reply_markup=markup)
+    markup = crypto_invoice_menu(invoice_id, lang)
+
+    text = t(lang, 'invoice_message', amount=amount, currency=currency, address=address)
+
+    # Generate QR code for the address
+    qr = qrcode.make(address)
+    buf = BytesIO()
+    qr.save(buf, format='PNG')
+    buf.seek(0)
+
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    await bot.send_photo(chat_id=call.message.chat.id,
+                         photo=buf,
+                         caption=text,
+                         parse_mode='Markdown',
+                         reply_markup=markup)
     await asyncio.sleep(sleep_time)
     info = select_unfinished_operations(invoice_id)
     if info:
