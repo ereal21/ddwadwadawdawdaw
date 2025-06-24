@@ -26,7 +26,7 @@ from bot.localization import t
 from bot.logger_mesh import logger
 from bot.misc import TgConfig, EnvKeys
 from bot.misc.payment import quick_pay, check_payment_status
-from bot.misc.crypto_payment import create_invoice, check_transaction_status
+from bot.misc.nowpayments import create_payment, check_payment
 
 
 
@@ -498,6 +498,15 @@ async def crypto_payment(call: CallbackQuery):
         await call.answer(text='❌ Invoice not found')
         return
 
+    payment_id, address, pay_amount = await create_payment(float(amount), currency)
+    start_operation(user_id, amount, payment_id)
+    sleep_time = int(TgConfig.PAYMENT_TIME)
+    lang = get_user_language(user_id) or 'en'
+
+    markup = crypto_invoice_menu(payment_id, lang)
+
+    text = t(lang, 'invoice_message', amount=pay_amount, currency=currency, address=address)
+
     invoice_id, address = await create_invoice(float(amount), currency)
     start_operation(user_id, amount, invoice_id)
     sleep_time = int(TgConfig.PAYMENT_TIME)
@@ -506,6 +515,7 @@ async def crypto_payment(call: CallbackQuery):
     markup = crypto_invoice_menu(invoice_id, lang)
 
     text = t(lang, 'invoice_message', amount=amount, currency=currency, address=address)
+
 
     # Generate QR code for the address
     qr = qrcode.make(address)
@@ -520,11 +530,11 @@ async def crypto_payment(call: CallbackQuery):
                          parse_mode='Markdown',
                          reply_markup=markup)
     await asyncio.sleep(sleep_time)
-    info = select_unfinished_operations(invoice_id)
+    info = select_unfinished_operations(payment_id)
     if info:
-        status = await check_transaction_status(invoice_id)
-        if status not in ('paid', 'success'):
-            finish_operation(invoice_id)
+        status = await check_payment(payment_id)
+        if status not in ('finished', 'confirmed', 'sending'):
+            finish_operation(payment_id)
 
 
 async def checking_payment(call: CallbackQuery):
@@ -537,9 +547,9 @@ async def checking_payment(call: CallbackQuery):
         operation_value = info[0]
         payment_status = await check_payment_status(label)
         if payment_status is None:
-            payment_status = await check_transaction_status(label)
+            payment_status = await check_payment(label)
 
-        if payment_status in ("success", "paid"):
+        if payment_status in ("success", "paid", "finished", "confirmed", "sending"):
             current_time = datetime.datetime.now()
             formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
             referral_id = get_user_referral(user_id)
