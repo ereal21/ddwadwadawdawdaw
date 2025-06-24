@@ -253,6 +253,14 @@ def payment_menu(url: str, label: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
 
+def crypto_invoice_menu(invoice_id: str, lang: str) -> InlineKeyboardMarkup:
+    inline_keyboard = [
+        [InlineKeyboardButton(t(lang, 'i_paid'), callback_data=f'check_{invoice_id}')],
+        [InlineKeyboardButton(t(lang, 'cancel'), callback_data='replenish_balance')]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
 def crypto_choice() -> InlineKeyboardMarkup:
     inline_keyboard = [
         [InlineKeyboardButton('ETH', callback_data='crypto_ETH'),

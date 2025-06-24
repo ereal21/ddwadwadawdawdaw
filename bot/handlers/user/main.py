@@ -1,7 +1,10 @@
 import asyncio
 import datetime
 import os
+from io import BytesIO
 from urllib.parse import urlparse
+
+import qrcode
 
 from aiogram import Dispatcher
 from aiogram.types import Message, CallbackQuery, ChatType, InlineKeyboardMarkup, InlineKeyboardButton
@@ -18,12 +21,12 @@ from bot.database.methods import (
 from bot.utils.files import cleanup_item_file
 from bot.handlers.other import get_bot_user_ids, check_sub_channel, get_bot_info
 from bot.keyboards import check_sub, main_menu, categories_list, goods_list, subcategories_list, user_items_list, back, item_info, \
-    profile, rules, payment_menu, close, crypto_choice
+    profile, rules, payment_menu, close, crypto_choice, crypto_invoice_menu
 from bot.localization import t
 from bot.logger_mesh import logger
 from bot.misc import TgConfig, EnvKeys
 from bot.misc.payment import quick_pay, check_payment_status
-from bot.misc.crypto_payment import create_invoice, check_transaction_status
+from bot.misc.nowpayments import create_payment, check_payment
 
 
 
@@ -495,23 +498,33 @@ async def crypto_payment(call: CallbackQuery):
         await call.answer(text='❌ Invoice not found')
         return
 
-    invoice_id, url = await create_invoice(float(amount), currency)
-    start_operation(user_id, amount, invoice_id)
+    payment_id, address, pay_amount = await create_payment(float(amount), currency)
+    start_operation(user_id, amount, payment_id)
     sleep_time = int(TgConfig.PAYMENT_TIME)
-    markup = payment_menu(url, invoice_id)
-    await bot.edit_message_text(chat_id=call.message.chat.id,
-                                message_id=call.message.message_id,
-                                text=(f'💵 Send {amount}€ in {currency}.\n'
+    lang = get_user_language(user_id) or 'en'
 
-                                      f'⌛️ You have {int(sleep_time / 60)} minutes to pay.\n'
-                                      f'<b>❗️ After payment press "Check payment"</b>'),
-                                reply_markup=markup)
+    markup = crypto_invoice_menu(payment_id, lang)
+
+    text = t(lang, 'invoice_message', amount=pay_amount, currency=currency, address=address)
+
+    # Generate QR code for the address
+    qr = qrcode.make(address)
+    buf = BytesIO()
+    qr.save(buf, format='PNG')
+    buf.seek(0)
+
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+    await bot.send_photo(chat_id=call.message.chat.id,
+                         photo=buf,
+                         caption=text,
+                         parse_mode='Markdown',
+                         reply_markup=markup)
     await asyncio.sleep(sleep_time)
-    info = select_unfinished_operations(invoice_id)
+    info = select_unfinished_operations(payment_id)
     if info:
-        status = await check_transaction_status(invoice_id)
-        if status not in ('paid', 'success'):
-            finish_operation(invoice_id)
+        status = await check_payment(payment_id)
+        if status not in ('finished', 'confirmed', 'sending'):
+            finish_operation(payment_id)
 
 
 async def checking_payment(call: CallbackQuery):
@@ -524,9 +537,9 @@ async def checking_payment(call: CallbackQuery):
         operation_value = info[0]
         payment_status = await check_payment_status(label)
         if payment_status is None:
-            payment_status = await check_transaction_status(label)
+            payment_status = await check_payment(label)
 
-        if payment_status in ("success", "paid"):
+        if payment_status in ("success", "paid", "finished", "confirmed", "sending"):
             current_time = datetime.datetime.now()
             formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
             referral_id = get_user_referral(user_id)

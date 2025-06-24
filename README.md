@@ -46,9 +46,19 @@ There are a couple of buttons in the admin panel to control all processes in the
 
 - #### Payment:
     - Yoomoney
+    - NOWPayments (crypto)
 
 - #### Debug:
     - logger
 
 ## Installation 💾
 [QUICK START](markdown/quick_start.md)
+
+For local testing of NOWPayments webhooks you can expose the bot with **ngrok**:
+
+```bash
+ngrok http 8000
+```
+
+Use the HTTPS URL as `NOWPAYMENTS_IPN_URL` in your environment so NOWPayments can
+reach your webhook endpoint.

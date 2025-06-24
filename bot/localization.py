@@ -12,6 +12,9 @@ LANGUAGES = {
         'language': '🌐 Language',
         'admin_panel': '🎛 Admin Panel',
         'choose_language': 'Please choose a language',
+        'invoice_message': 'Send `{amount}` {currency} to the address below:\n`{address}`\nAfter payment press the button below.',
+        'i_paid': 'I paid',
+        'cancel': 'Cancel',
     },
     'ru': {
         'hello': '👋 Привет, {user}!',
@@ -26,6 +29,9 @@ LANGUAGES = {
         'language': '🌐 Язык',
         'admin_panel': '🎛 Админ панель',
         'choose_language': 'Пожалуйста, выберите язык',
+        'invoice_message': 'Отправьте `{amount}` {currency} на адрес ниже:\n`{address}`\nПосле оплаты нажмите кнопку ниже.',
+        'i_paid': 'Я оплатил',
+        'cancel': 'Отмена',
     },
     'lt': {
         'hello': '👋 Sveiki, {user}!',
@@ -40,6 +46,9 @@ LANGUAGES = {
         'language': '🌐 Kalba',
         'admin_panel': '🎛 Admin pultas',
         'choose_language': 'Pasirinkite kalbą',
+        'invoice_message': 'Siųskite `{amount}` {currency} žemiau nurodytu adresu:\n`{address}`\nPo apmokėjimo paspauskite apačioje esantį mygtuką.',
+        'i_paid': 'Apmokėjau',
+        'cancel': 'Atšaukti',
     },
 }
 
