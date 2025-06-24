@@ -20,7 +20,11 @@
      - `SOL_NODE_URL` - RPC endpoint for your Solana validator
      - `BTC_RPC_URL` - RPC URL with credentials for Bitcoin Core
      - `LTC_RPC_URL` - RPC URL with credentials for Litecoin Core
-     - `XRP_RPC_URL` - HTTP RPC endpoint for your rippled server
+    - `XRP_RPC_URL` - HTTP RPC endpoint for your rippled server
+
+     - `NOWPAYMENTS_API_KEY` - API key from your NOWPayments account
+     - `NOWPAYMENTS_IPN_SECRET` - secret used to verify IPN callbacks
+     - `NOWPAYMENTS_IPN_URL` - public URL for NOWPayments webhooks (set via ngrok during development)
 
 
    5. [Setup config.py](../bot/misc/config.py)
@@ -31,8 +35,13 @@
       - PAYMENT_TIME - time allotted for payment
       - RULES - rules for using the bot (to disable, set `RULES: Final = None`)
 
-   6. Run run.py
-   7. Make sure your self-hosted nodes are up and RPC endpoints match the URLs above.
+   6. If you plan to receive IPN webhooks, expose your local server with ngrok:
+       ```bash
+       ngrok http 8000
+       ```
+      Use the HTTPS URL shown in the console as `NOWPAYMENTS_IPN_URL`.
+   7. Run run.py
+   8. Make sure your self-hosted nodes are up and RPC endpoints match the URLs above.
 
 ### P.S.
 1. Add the bot to the channel and group you have provided and make it an admin

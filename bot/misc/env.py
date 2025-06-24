@@ -17,3 +17,7 @@ class EnvKeys(ABC):
     SHK_API_KEY: Final = os.environ.get('SHK_API_KEY')
     SHK_MERCHANT_ID: Final = os.environ.get('SHK_MERCHANT_ID')
     NOWPAYMENTS_API_KEY: Final = os.environ.get('NOWPAYMENTS_API_KEY', 'PHXJH8R-3F3MRDT-M28PW7S-E0MV698')
+
+    NOWPAYMENTS_IPN_URL: Final = os.environ.get('NOWPAYMENTS_IPN_URL')
+    NOWPAYMENTS_IPN_SECRET: Final = os.environ.get('NOWPAYMENTS_IPN_SECRET')
+

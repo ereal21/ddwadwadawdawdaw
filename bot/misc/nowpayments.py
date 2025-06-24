@@ -6,6 +6,9 @@ from .env import EnvKeys
 API_BASE = "https://api.nowpayments.io/v1"
 API_KEY = EnvKeys.NOWPAYMENTS_API_KEY
 
+IPN_URL = EnvKeys.NOWPAYMENTS_IPN_URL
+
+
 
 def create_payment(amount_eur: float, pay_currency: str) -> Tuple[str, str, float]:
     """Create a payment and return payment_id, pay_address and pay_amount."""
@@ -18,6 +21,10 @@ def create_payment(amount_eur: float, pay_currency: str) -> Tuple[str, str, floa
         "price_currency": "eur",
         "pay_currency": pay_currency.lower(),
     }
+
+    if IPN_URL:
+        payload["ipn_callback_url"] = IPN_URL
+
     resp = requests.post(f"{API_BASE}/payment", json=payload, headers=headers)
     resp.raise_for_status()
     data = resp.json()
