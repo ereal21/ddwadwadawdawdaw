@@ -46,6 +46,7 @@ There are a couple of buttons in the admin panel to control all processes in the
 
 - #### Payment:
     - Yoomoney
+    - NOWPayments (crypto)
 
 - #### Debug:
     - logger
